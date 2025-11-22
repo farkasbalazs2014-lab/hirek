@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Híroldal</title>
+  <style>
+    body { margin:0; font-family:sans-serif; background:#000; color:#fff; }
+    header { padding:20px; }
+    .section { padding:20px; border-top:2px solid white; }
+    .panel { margin:20px; padding:20px; background:#111; border-radius:8px; }
+    input, textarea, button {
+      display:block; margin:10px 0; padding:10px; width:100%;
+      background:#222; color:#fff; border:1px solid #555;
+    }
+    button { background:#444; cursor:pointer; }
+    button:hover { background:#666; }
+    .news-item { background:#111; margin:10px 0; padding:10px; border-left:4px solid #fff; }
+    .top-right { position:absolute; top:20px; right:20px; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Hét szava</h2>
+  <h1 id="weeklyWord">Kezdet</h1>
+  <div class="top-right" id="loginInfo"></div>
+</header>
+
+<div class="section">
+  <h2>Közlemény</h2>
+  <div id="announcementBox">Nincs közlemény.</div>
+</div>
+
+<div class="section">
+  <h2>Hírek</h2>
+  <div id="newsList">Nincs még hír.</div>
+</div>
+
+<div id="userPanel" class="hidden section">
+  <div class="panel">
+    <h3>Új hír közzététele</h3>
+    <input id="newsTitle" placeholder="Cím">
+    <textarea id="newsContent" placeholder="Tartalom"></textarea>
+    <button onclick="addNews()">Közzététel</button>
+  </div>
+</div>
+
+<div id="adminPanel" class="hidden section">
+  <div class="panel">
+    <h3>Adminisztrátor menü</h3>
+    <h4>A hét szava frissítése</h4>
+    <input id="wordInput" placeholder="Szó">
+    <textarea id="wordDesc" placeholder="Leírás"></textarea>
+    <button onclick="updateWord()">Mentés</button>
+
+    <h4>Közlemény közzététele</h4>
+    <textarea id="adminMsg" placeholder="Közlemény"></textarea>
+    <button onclick="postAnnouncement()">Közzététel</button>
+
+    <h4>Hírek törlése</h4>
+    <div id="adminNewsList"></div>
+  </div>
+</div>
+
+<script>
+  const currentUser = localStorage.getItem("user");
+  const role = localStorage.getItem("role");
+  let news = [];
+  let weeklyWord = "Kezdet";
+  let announcement = "";
+
+  if (!currentUser) window.location.href = "login.html";
+
+  document.getElementById('loginInfo').innerHTML = `
+    <p>Bejelentkezve: ${currentUser}</p>
+    <button onclick="logout()">Kilépés</button>
+  `;
+  document.getElementById('userPanel').classList.remove('hidden');
+  if (role === "admin") document.getElementById('adminPanel').classList.remove('hidden');
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+
+  function addNews() {
+    const title = document.getElementById('newsTitle').value;
+    const content = document.getElementById('newsContent').value;
+    const item = { title, content, author: currentUser, date: new Date().toLocaleString() };
+
+    fetch('https://hirportal.onrender.com/api/news', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    }).then(() => {
+      document.getElementById('newsTitle').value = '';
+      document.getElementById('newsContent').value = '';
+      loadNews();
+    });
+  }
+
+  function loadNews() {
+    fetch('https://hirportal.onrender.com/api/news')
+      .then(res => res.json())
+      .then(data => { news = data; renderNews(); });
+  }
+
+  function renderNews() {
+    const list = document.getElementById('newsList');
+    list.innerHTML = '';
+    if (news.length === 0) list.innerHTML = "Nincs még hír.";
+    else {
+      news.forEach((n, i) => {
+        const div = document.createElement('div');
+        div.className = 'news-item';
+        div.innerHTML = `<strong>${n.title}</strong><p>${n.content}</p><small>${n.author} • ${n.date}</small>`;
+        list.appendChild(div);
+      });
+    }
+
+    const adminList = document.getElementById('adminNewsList');
+    if (adminList) {
+      adminList.innerHTML = '';
+      news.forEach((n, i) => {
+        const div = document.createElement('div');
+        div.className = 'news-item';
+        div.innerHTML = `<strong>${n.title}</strong><button onclick="deleteNews(${i})">Törlés</button>`;
+        adminList.appendChild(div);
+      });
+    }
+  }
+
+  function deleteNews(index) {
+    news.splice(index, 1);
+    renderNews();
+  }
+
+  function updateWord() {
+    const w = document.getElementById('wordInput').value;
+    weeklyWord = w || weeklyWord;
+    document.getElementById('weeklyWord').innerText = weeklyWord;
+  }
+
+  function postAnnouncement() {
+    announcement = document.getElementById('adminMsg').value;
+    document.getElementById('announcementBox').innerText = announcement || "Nincs közlemény.";
+  }
+
+  loadNews();
+</script>
+</body>
+</html>

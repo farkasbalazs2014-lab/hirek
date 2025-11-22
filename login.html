@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Bejelentkezés</title>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      width: 250px;
+      background: #111;
+      color: #fff;
+      border: 1px solid #444;
+    }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Bejelentkezés</h1>
+  <input id="username" placeholder="Felhasználónév">
+  <input id="password" type="password" placeholder="Jelszó">
+  <button onclick="login()">Belépés</button>
+
+  <script>
+    function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+
+      if (pass === "gla123" || pass === "Balazs55") {
+        localStorage.setItem("user", user || "Felhasználó");
+        localStorage.setItem("role", pass === "Balazs55" ? "admin" : "user");
+        window.location.href = "index.html";
+      } else {
+        alert("Hibás jelszó!");
+      }
+    }
+  </script>
+</body>
+</html>
